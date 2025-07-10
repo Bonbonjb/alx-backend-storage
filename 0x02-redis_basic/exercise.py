@@ -120,9 +120,9 @@ def replay(method: Callable) -> None:
 
     inputs = r.lrange(f"{name}:inputs", 0, -1)
     outputs = r.lrange(f"{name}:outputs", 0, -1)
-    count = r.get(name)
+    call_count = r.get(name)
 
-    print(f"{name} was called {int(count)} times:")
+    print(f"{name} was called {int(call_count)} times:")
 
     for inp, out in zip(inputs, outputs):
         print(f"{name}(*{inp.decode('utf-8')}) -> {out.decode('utf-8')}")
