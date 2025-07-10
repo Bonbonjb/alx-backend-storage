@@ -8,14 +8,14 @@ import requests
 from functools import wraps
 from typing import Callable
 
-# Redis client
+# Connect to Redis
 r = redis.Redis()
 
 
 def count_url_access(method: Callable) -> Callable:
     """
-    Decorator that tracks how many times a URL is accessed.
-    Uses Redis key 'count:{url}'.
+    Decorator to track how many times a URL is accessed.
+    Increments Redis key 'count:{url}'.
     """
     @wraps(method)
     def wrapper(url: str) -> str:
@@ -27,11 +27,11 @@ def count_url_access(method: Callable) -> Callable:
 @count_url_access
 def get_page(url: str) -> str:
     """
-    Fetches the content of a URL or returns cached version if available.
-    Caches the response content in Redis with a 10-second expiration.
+    Returns HTML content of a URL.
+    Caches result in Redis for 10 seconds.
 
     Args:
-        url (str): URL to fetch.
+        url: Web URL to retrieve.
 
     Returns:
         str: HTML content of the page.
