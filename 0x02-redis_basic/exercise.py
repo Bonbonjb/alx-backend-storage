@@ -118,11 +118,18 @@ def replay(method: Callable) -> None:
     r = method.__self__._redis
     name = method.__qualname__
 
+    call_count = r.get(name)
+    try:
+        call_count = int(call_count.decode("utf-8"))
+    except Exception:
+        call_count = 0
+
+    print(f"{name} was called {call_count} times:")
+
     inputs = r.lrange(f"{name}:inputs", 0, -1)
     outputs = r.lrange(f"{name}:outputs", 0, -1)
-    call_count = r.get(name)
-
-    print(f"{name} was called {int(call_count)} times:")
 
     for inp, out in zip(inputs, outputs):
-        print(f"{name}(*{inp.decode('utf-8')}) -> {out.decode('utf-8')}")
+        inp_str = inp.decode("utf-8")
+        out_str = out.decode("utf-8")
+        print(f"{name}(*{inp_str}) -> {out_str}")
