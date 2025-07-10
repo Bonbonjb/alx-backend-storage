@@ -119,10 +119,7 @@ def replay(method: Callable) -> None:
     name = method.__qualname__
 
     call_count = r.get(name)
-    try:
-        call_count = int(call_count.decode("utf-8"))
-    except Exception:
-        call_count = 0
+    call_count = int(call_count.decode("utf-8")) if call_count else 0
 
     print(f"{name} was called {call_count} times:")
 
@@ -130,6 +127,5 @@ def replay(method: Callable) -> None:
     outputs = r.lrange(f"{name}:outputs", 0, -1)
 
     for inp, out in zip(inputs, outputs):
-        inp_str = inp.decode("utf-8")
-        out_str = out.decode("utf-8")
-        print(f"{name}(*{inp_str}) -> {out_str}")
+        args = eval(inp.decode("utf-8"))  # Parse stringified tuple
+        print(f"{name}(*{args}) -> {out.decode('utf-8')}")
