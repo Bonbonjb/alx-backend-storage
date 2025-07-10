@@ -3,6 +3,7 @@
 Main file to test Cache class.
 """
 import redis
+from exercise import Cache, replay
 
 Cache = __import__('exercise').Cache
 
@@ -14,6 +15,11 @@ print(cache.get(cache.store.__qualname__))
 cache.store(b"second")
 cache.store(b"third")
 print(cache.get(cache.store.__qualname__))
+cache.store("foo")
+cache.store("bar")
+cache.store(42)
+
+replay(cache.store)
 
 data = b"hello"
 key = cache.store(data)
