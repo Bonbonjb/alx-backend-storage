@@ -15,10 +15,10 @@ def count_calls(method: Callable) -> Callable:
     """
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        key = method.__qualname__
+        key = method.__qualname__  # ✅ must be from the method
         self._redis.incr(key)
         return method(self, *args, **kwargs)
-    return wrappe
+    return wrapper
 
 class Cache:
     """
