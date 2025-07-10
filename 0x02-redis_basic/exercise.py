@@ -107,3 +107,22 @@ class Cache:
             The integer value, or None if key does not exist.
         """
         return self.get(key, fn=int)
+
+def replay(method: Callable) -> None:
+    """
+    Display the history of calls of a particular method.
+
+    Args:
+        method: The method whose history should be displayed.
+    """
+    r = method.__self__._redis
+    name = method.__qualname__
+
+    inputs = r.lrange(f"{name}:inputs", 0, -1)
+    outputs = r.lrange(f"{name}:outputs", 0, -1)
+    count = r.get(name)
+
+    print(f"{name} was called {int(count)} times:")
+
+    for inp, out in zip(inputs, outputs):
+        print(f"{name}(*{inp.decode('utf-8')}) -> {out.decode('utf-8')}")
