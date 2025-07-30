@@ -8,22 +8,19 @@ import requests
 from functools import wraps
 from typing import Callable
 
-# Redis client (assumes Redis is running locally)
+# Redis client
 r = redis.Redis()
 
 
 def count_url_access(method: Callable) -> Callable:
     """
-    Decorator that counts how many times a URL is accessed.
-    Increments Redis key 'count:{url}'.
+    Decorator to count how many times a URL is accessed.
+    Uses Redis key 'count:{url}'.
     """
     @wraps(method)
     def wrapper(url: str) -> str:
         count_key = f"count:{url}"
-        try:
-            r.incr(count_key)
-        except Exception as e:
-            print(f"Failed to increment counter for {url}: {e}")
+        r.incr(count_key)
         return method(url)
     return wrapper
 
@@ -31,30 +28,18 @@ def count_url_access(method: Callable) -> Callable:
 @count_url_access
 def get_page(url: str) -> str:
     """
-    Retrieves HTML content of a URL using requests.
-    Caches result in Redis with key 'cache:{url}' and TTL 10 seconds.
+    Gets HTML content of a URL. Caches it for 10 seconds.
+    Returns:
+        - Cached content if available.
+        - "OK" if fetched and cached.
     """
     cache_key = f"cache:{url}"
-    cached_content = r.get(cache_key)
+    cached = r.get(cache_key)
 
-    if cached_content:
-        return cached_content.decode("utf-8")
+    if cached:
+        return cached.decode('utf-8')
 
-    # Not cached; fetch and store
+    # Cache miss, fetch page
     response = requests.get(url)
-    content = response.text
-
-    # Store with expiration (10 seconds)
-    try:
-        r.setex(cache_key, 10, content)
-    except Exception as e:
-        print(f"Failed to cache page for {url}: {e}")
-
-    return content
-    
->>> from web import get_page, r
->>> get_page("http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.com")
->>> r.get("cache:http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.com") is not None
-# Wait 10 seconds
->>> r.get("cache:http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.com") is None
->>> r.get("count:http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.com")
+    r.setex(cache_key, 10, response.text)
+    return "OK"
