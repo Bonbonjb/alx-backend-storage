@@ -51,3 +51,10 @@ def get_page(url: str) -> str:
         print(f"Failed to cache page for {url}: {e}")
 
     return content
+    
+>>> from web import get_page, r
+>>> get_page("http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.com")
+>>> r.get("cache:http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.com") is not None
+# Wait 10 seconds
+>>> r.get("cache:http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.com") is None
+>>> r.get("count:http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.com")
