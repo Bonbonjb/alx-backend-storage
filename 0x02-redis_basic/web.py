@@ -19,7 +19,11 @@ def count_url_access(method: Callable) -> Callable:
     """
     @wraps(method)
     def wrapper(url: str) -> str:
-        r.incr(f"count:{url}")
+        count_key = f"count:{url}"
+        try:
+            r.incr(count_key)
+        except Exception as e:
+            print(f"Failed to increment counter for {url}: {e}")
         return method(url)
     return wrapper
 
@@ -29,20 +33,21 @@ def get_page(url: str) -> str:
     """
     Retrieves HTML content of a URL using requests.
     Caches result in Redis with key 'cache:{url}' and TTL 10 seconds.
-
-    Args:
-        url (str): The web page URL.
-
-    Returns:
-        str: HTML content of the page.
     """
     cache_key = f"cache:{url}"
-    cached = r.get(cache_key)
-    if cached:
-        return cached.decode('utf-8')
+    cached_content = r.get(cache_key)
 
-    # Not cached; fetch, store and return
+    if cached_content:
+        return cached_content.decode("utf-8")
+
+    # Not cached; fetch and store
     response = requests.get(url)
     content = response.text
-    r.setex(cache_key, 10, content)
+
+    # Store with expiration (10 seconds)
+    try:
+        r.setex(cache_key, 10, content)
+    except Exception as e:
+        print(f"Failed to cache page for {url}: {e}")
+
     return content
