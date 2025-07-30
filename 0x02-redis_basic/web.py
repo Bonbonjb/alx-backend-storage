@@ -1,45 +1,32 @@
 #!/usr/bin/env python3
-"""
-Module that implements an expiring web cache and request counter using Redis.
-"""
+""" Redis Module """
 
+from functools import wraps
 import redis
 import requests
-from functools import wraps
 from typing import Callable
 
-# Redis client
-r = redis.Redis()
+redis_ = redis.Redis()
 
 
-def count_url_access(method: Callable) -> Callable:
-    """
-    Decorator to count how many times a URL is accessed.
-    Uses Redis key 'count:{url}'.
-    """
+def count_requests(method: Callable) -> Callable:
+    """ Decortator for counting """
     @wraps(method)
-    def wrapper(url: str) -> str:
-        count_key = f"count:{url}"
-        r.incr(count_key)
-        return method(url)
+    def wrapper(url):  # sourcery skip: use-named-expression
+        """ Wrapper for decorator """
+        redis_.incr(f"count:{url}")
+        cached_html = redis_.get(f"cached:{url}")
+        if cached_html:
+            return cached_html.decode('utf-8')
+        html = method(url)
+        redis_.setex(f"cached:{url}", 10, html)
+        return html
+
     return wrapper
 
 
-@count_url_access
+@count_requests
 def get_page(url: str) -> str:
-    """
-    Gets HTML content of a URL. Caches it for 10 seconds.
-    Returns:
-        - Cached content if available.
-        - "OK" if fetched and cached.
-    """
-    cache_key = f"cache:{url}"
-    cached = r.get(cache_key)
-
-    if cached:
-        return cached.decode('utf-8')
-
-    # Cache miss, fetch page
-    response = requests.get(url)
-    r.setex(cache_key, 10, response.text)
-    return "OK"
+    """ Obtain the HTML content of a  URL """
+    req = requests.get(url)
+    return req.text
